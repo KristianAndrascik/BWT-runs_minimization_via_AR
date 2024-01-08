@@ -29,6 +29,30 @@ pub fn min_runs(input: &str) -> usize {
     
 }
 
+pub fn min_runs_label(input_string: &str, input_label: &str) -> usize {
+    
+    let alphabet: Vec<_> = input_label.chars().collect::<HashSet<_>>().into_iter().collect();
+    let mut dp: HashMap<(usize, usize, usize), usize> = HashMap::new();
+    let tree = SuffixTree::new(input_string);
+    let mut length = 0;
+
+    
+    find_minimal_runs(&tree, tree.root(), &alphabet, &mut dp, &mut length, &input_label);
+
+    let mut result = usize::MAX;
+    for i in 0..alphabet.len() {
+        for j in 0..alphabet.len() {
+            let current = *dp.get(&(tree.root().id(), i, j)).unwrap();
+            if result > current {
+                result = current;
+            }
+        }
+    }
+    
+    return result;
+    
+}
+
 fn find_minimal_runs(
     tree: &SuffixTree<'_>,
     node: &Node,
