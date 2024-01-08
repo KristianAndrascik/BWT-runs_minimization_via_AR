@@ -87,39 +87,56 @@ fn find_minimal_runs(
             }
         }
         
-
+        let mut dp_permutation: HashMap<(usize, usize, usize), usize> = HashMap::new();
+        let mut previous_permutation: Vec<&usize> = Vec::new();
+        let mut first_permutation = true;
+        
         // Create all permutation of children_ids
-        for p in children_ids.iter().permutations(children.len()) {
+        for p in children_ids.iter().sorted().permutations(children.len()) {
             
-             //Mπ [1, l, m] = ρ(w1, l, m)
-            let mut dp_permutation: HashMap<(usize, usize, usize), usize> = HashMap::new();
-            for i in 0..alphabet.len() {
-                for j in 0..alphabet.len() {
-                    dp_permutation.insert((0, i, j), *dp.get(&(*p[0], i, j)).unwrap());
+            let mut change_in_permutation = 0;
+            if first_permutation {
+                first_permutation = false;
+                previous_permutation = p.clone();
+            }else {
+                while p[change_in_permutation] == previous_permutation[change_in_permutation] {
+                    change_in_permutation += 1;
                 }
+                previous_permutation = p.clone();
             }
+
+            if change_in_permutation == 0 {
+                //Mπ [1, l, m] = ρ(w1, l, m)
+                for i in 0..alphabet.len() {
+                    for j in 0..alphabet.len() {
+                        dp_permutation.insert((0, i, j), *dp.get(&(*p[0], i, j)).unwrap());
+                    }
+                }
+                change_in_permutation += 1;
+            }
+            
 
             //Mπ [k, l, m] = min(i,j) {Mπ [k − 1, l, i] + ρ(wk, j, m) − δi,j}
             //where δij = 1 if i = j and 0 otherwise
 
-            for k in 1..children.len() {
+            for k in change_in_permutation..children.len() {
                 for l in 0..alphabet.len() {
                     for m in 0..alphabet.len() {
                         let mut min_runs = usize::MAX;
 
                         for i in 0..alphabet.len() {
                             for j in 0..alphabet.len() {
-                                let previous_in_permuation = *dp_permutation.get(&(k-1, l, i)).unwrap_or(&42);
+                                let previous_in_permutation = *dp_permutation.get(&(k-1, l, i)).unwrap_or(&42);
                                 let current_in_permutation = *dp.get(&(*p[k], j, m)).unwrap();
                                 
 
-                                if previous_in_permuation == usize::MAX
+                                if previous_in_permutation == usize::MAX
                                     || current_in_permutation == usize::MAX
                                 {
                                     continue;
                                 }
 
-                                let current_runs = previous_in_permuation + current_in_permutation
+                                let current_runs = previous_in_permutation + current_in_permutation
                                     - if i == j { 1 } else { 0 };
                                 if min_runs > current_runs {
                                     min_runs = current_runs;
